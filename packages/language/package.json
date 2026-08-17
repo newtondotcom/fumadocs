@@ -17,6 +17,7 @@
   "exports": {
     "./zh-cn": "./dist/zh-cn.js",
     "./zh-tw": "./dist/zh-tw.js",
+    "./fr-fr" : "./dist/fr-fr.js",
     "./package.json": "./package.json"
   },
   "publishConfig": {
