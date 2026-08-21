@@ -4,9 +4,9 @@ import { createContentStorageBuilder, type ContentStorage } from './storage/cont
 import { createPageTreeBuilder, type PageTreeOptions } from '@/source/page-tree/builder';
 import { dirname, joinPath } from './path';
 import { normalizeUrl } from '@/utils/url';
-import { SlugFn, slugsPlugin } from '@/source/plugins/slugs';
+import { slugsPlugin, SlugsPluginOptions } from '@/source/plugins/slugs';
 import { iconPlugin, type IconResolver } from '@/source/plugins/icon';
-import type { MetaData, PageData, StaticSource } from './source';
+import { isStaticSource, type MetaData, type PageData, type StaticSource } from './source';
 import { visit } from '@/page-tree/utils';
 import type { PageTreeTransformer } from '@/source/page-tree/builder';
 import type { SerializedPageTree } from './client';
@@ -24,7 +24,7 @@ export interface LoaderConfig {
 export interface LoaderOptions<
   S extends ContentStorage = ContentStorage,
   I18n extends I18nConfig | undefined = I18nConfig | undefined,
-> {
+> extends SlugsPluginOptions<S> {
   baseUrl: string;
   i18n?: I18n;
   url?: (slugs: string[], locale?: string) => string;
@@ -40,7 +40,6 @@ export interface LoaderOptions<
         typedPlugin: (plugin: LoaderPlugin<S>) => LoaderPlugin;
       }) => LoaderPluginOption[]);
   icon?: IconResolver;
-  slugs?: SlugFn<S>;
 }
 
 export interface ResolvedLoaderConfig {
@@ -182,6 +181,8 @@ function createPageIndexer({ url }: ResolvedLoaderConfig) {
   const pathToMeta = new Map<string, Meta>();
   // (locale.path -> meta)
   const pathToPage = new Map<string, Page>();
+  // (locale.url -> page)
+  const urlToPage = new Map<string, Page>();
 
   return {
     scan(storage: ContentStorage, lang?: string) {
@@ -211,10 +212,14 @@ function createPageIndexer({ url }: ResolvedLoaderConfig) {
         };
         pathToPage.set(path, page);
         pages.set(prefix + page.slugs.join('/'), page);
+        urlToPage.set(prefix + page.url, page);
       }
     },
     getPage(path: string, lang = '') {
       return pathToPage.get(`${lang}.${path}`);
+    },
+    getPageByUrl(url: string, lang = '') {
+      return urlToPage.get(`${lang}.${url}`);
     },
     getMeta(path: string, lang = '') {
       return pathToMeta.get(`${lang}.${path}`);
@@ -265,6 +270,7 @@ export function createGetUrl(baseUrl: string, i18n?: I18nConfig): ResolvedLoader
   };
 }
 
+/** content loader API for static content sources */
 export function loader<I extends ResolvedInput, I18n extends I18nConfig | undefined = undefined>(
   source: I,
   options: LoaderOptions<NoInfer<GenerateStorage<I>>, I18n>,
@@ -274,6 +280,7 @@ export function loader<I extends ResolvedInput, I18n extends I18nConfig | undefi
   i18n: I18n;
 }>;
 
+/** content loader API for static content sources */
 export function loader<I extends ResolvedInput, I18n extends I18nConfig | undefined = undefined>(
   options: LoaderOptions<NoInfer<GenerateStorage<I>>, I18n> & {
     source: I;
@@ -368,7 +375,7 @@ export function loader<I extends ResolvedInput, I18n extends I18nConfig | undefi
 
         target = indexer.getPage(path, language);
       } else {
-        target = this.getPages(language).find((item) => item.url === value);
+        target = indexer.getPageByUrl(value, language);
       }
 
       if (target)
@@ -474,12 +481,20 @@ export function loader<I extends ResolvedInput, I18n extends I18nConfig | undefi
     },
   };
 
+  if (isStaticSource(loaderConfig.input)) {
+    loaderConfig.input.configureStatic?.({ loader: out });
+  } else {
+    for (const [k, v] of Object.entries(loaderConfig.input)) {
+      v.configureStatic?.({ loader: out, source: k });
+    }
+  }
+
   return out as never;
 }
 
 function resolveConfig(
   input: ResolvedInput,
-  { slugs, icon, plugins = [], baseUrl, url, ...base }: LoaderOptions,
+  { slugs, baseSlugs, icon, plugins = [], baseUrl, url, ...base }: LoaderOptions,
 ): ResolvedLoaderConfig {
   let config: ResolvedLoaderConfig = {
     ...base,
@@ -492,7 +507,7 @@ function resolveConfig(
             typedPlugin: (plugin) => plugin as unknown as LoaderPlugin,
           })
         : plugins),
-      slugsPlugin(slugs),
+      slugsPlugin({ slugs, baseSlugs }),
     ]),
   };
 
