@@ -132,16 +132,14 @@ export function CodeBlock({
           'text-[0.8125rem] py-3.5 overflow-auto max-h-[600px] fd-scroll-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-fd-ring',
           viewportProps.className,
         )}
-        style={
-          {
-            // space for toolbar
-            '--padding-right': !title ? 'calc(var(--spacing) * 8)' : undefined,
-            counterSet: props['data-line-numbers']
-              ? `line ${Number(props['data-line-numbers-start'] ?? 1) - 1}`
-              : undefined,
-            ...viewportProps.style,
-          } as object
-        }
+        style={{
+          // space for toolbar
+          '--padding-right': !title ? 'calc(var(--spacing) * 8)' : undefined,
+          counterSet: props['data-line-numbers']
+            ? `line ${Number(props['data-line-numbers-start'] ?? 1) - 1}`
+            : undefined,
+          ...viewportProps.style,
+        }}
       >
         {children}
       </div>
@@ -166,7 +164,7 @@ function CopyButton({
       node.replaceWith('\n');
     });
 
-    void navigator.clipboard.writeText(clone.textContent ?? '');
+    return navigator.clipboard.writeText(clone.textContent ?? '');
   });
 
   return (
@@ -180,13 +178,16 @@ function CopyButton({
         }),
         className,
       )}
-      aria-label={
-        checked ? t('Copied Text', { note: 'aria-label' }) : t('Copy Text', { note: 'aria-label' })
-      }
+      aria-live="polite"
       onClick={onClick}
       {...props}
     >
       {checked ? <Check /> : <Clipboard />}
+      <span className="sr-only">
+        {checked
+          ? t('Copied Text', { note: 'aria-label' })
+          : t('Copy Text', { note: 'aria-label' })}
+      </span>
     </button>
   );
 }

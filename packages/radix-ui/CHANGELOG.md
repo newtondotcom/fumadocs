@@ -1,3 +1,148 @@
+## fumadocs-ui@16.15.14
+
+### Wrap page footer descriptions instead of truncating
+
+The previous/next page footer cards now wrap long descriptions instead of cutting them off with an ellipsis.
+
+### Announce copy confirmation to screen readers
+
+Copy buttons are polite live regions whose label switches to "Copied" after a successful copy, so screen readers announce it. The code block's copy button no longer reports success when the clipboard write fails.
+
+### Expose the search dialog as a combobox
+
+The search input is now a `combobox` that controls a `listbox` of `option` results and reports the highlighted result through `aria-activedescendant`, so screen readers announce results as you move through them. Hidden result buttons are removed from the tab order, and the empty state is announced as a status message.
+
+### Remove hidden sidebar controls from the tab order
+
+The collapsed sidebar and its floating pill are now `inert` while hidden, and toggling the sidebar moves focus to the trigger that becomes visible.
+
+### Add `block` TOC style
+
+A TOC style without the track line: headings are indented by depth, and a block slides behind the active headings.
+
+```tsx
+<DocsPage tableOfContent={{ style: 'block' }} />
+```
+
+## fumadocs-ui@16.15.13
+
+### Keep the collapsed sidebar's controls off the page title
+
+With the sidebar collapsed, the docs layout floats the reopen and search buttons in a fixed pill at the top-left of the page and starts the article at the same row.
+Wherever the article is not centered with room to spare, every viewport below about 1280px, the pill covered the page title.
+The article now leaves room for the pill while the sidebar is collapsed.
+
+### AI page actions name the page by the URL the reader is on
+
+The "Open in ..." prompts built the page URL from the router pathname and the origin.
+Next's `usePathname()` omits a configured `basePath`, so a site mounted under one sent assistants a URL that did not exist.
+
+The prompt now uses the reader's current URL, without query and hash, and falls back to the pathname during server rendering.
+A new `pageUrl` prop on `ViewOptionsPopover` sets a canonical URL instead.
+
+### Subscribe with `useSyncExternalStore`
+
+#### Optimize Performance
+
+Use `useSyncExternalStore()` from React.
+
+## fumadocs-ui@16.15.11
+
+### Shadcn UI compatible primitives
+
+The primitives in `fumadocs-ui/components/ui/*` now follow the API of Shadcn UI, so components installed by the CLI can use the ones you already have.
+
+`buttonVariants` accepts the `default` variant of Shadcn UI:
+
+```tsx
+buttonVariants({ variant: 'default', size: 'sm' });
+```
+
+`primary` and the `color` alias still work.
+
+`fumadocs-ui/components/ui/scroll-area` is removed, the sidebars render the scroll area primitives directly.
+
+### Mark packages side-effect free
+
+All packages now declare `sideEffects` in `package.json`, so bundlers can tree-shake unused modules. Packages shipping stylesheets list them as side effects to keep CSS imports.
+
+## fumadocs-ui@16.15.10
+
+### Fix language switching with hidden locale prefixes
+
+Root Provider's `i18n` option now accepts `defaultLanguage` and `hideLocale`. The language switcher uses these options instead of guessing from the current URL, so switching from `/zh/docs` to the default language `en` with `hideLocale: 'default-locale'` navigates to `/docs`.
+
+`i18nProvider()` and `defineI18nUI()` pass these options from your i18n config automatically.
+
+## fumadocs-ui@16.15.8
+
+### Fix Tabs reverting to the hash target after a tab click
+
+The hash-to-tab logic of `Tabs` ran on every render instead of only on mount and `hashchange`, because the effect depended on a `useEffectEvent` callback, which is not referentially stable.
+
+## fumadocs-ui@16.15.6
+
+### Replace `cnfast` with `cn`
+
+Internal refactor only.
+
+## fumadocs-ui@16.15.5
+
+### Root types: version your docs with `root: "<type>"`
+
+`root` in `meta.json` now accepts a string, the type of root folder. Root folders of the same type under the same parent are interchangeable, which is how you keep multiple versions of the same docs in one site:
+
+```json tab="content/docs/v1/meta.json"
+{
+  "title": "1.0.0",
+  "root": "version"
+}
+```
+
+```json tab="content/docs/v2/meta.json"
+{
+  "title": "2.0.0",
+  "root": "version"
+}
+```
+
+The sidebar only shows the opened version, and docs layouts render a dropdown to switch between them. Switching keeps your place: it navigates to the same page in the other version (`/docs/v1/guide` to `/docs/v2/guide`), or its index page when the page doesn't exist there.
+
+`root: true` is simply the default type, displayed as tabs. See [Versioning](https://fumadocs.dev/docs/versioning) for the guide and [Root Type](https://fumadocs.dev/docs/page-conventions#root-type) for the reference.
+
+### Tabs are grouped by root folder
+
+Layout tabs are now grouped by the root folders on the current page's path, with one dropdown per group. This changes a few behaviours of the existing `root: true` tabs:
+
+- Clicking a tab navigates to the same page in the target folder when it exists, otherwise its index page as before.
+- With nested root folders, each level gets its own dropdown instead of one flat list. Tab lists (`tabMode: 'top'` on Docs layout, `tabMode: 'navbar'` on Notebook layout) show the innermost `root: true` group, and are hidden on pages outside of any root folder.
+- `getLayoutTabs()` includes typed root folders too, so a custom `transform` also decorates them. Custom `tabs` entries bound to a page tree folder are grouped the same way, other entries are appended to the `root: true` dropdown.
+- `tabs={false}` disables the dropdowns of typed root folders as well.
+
+### `findProjection()` in `fumadocs-core/page-tree`
+
+Find the structural projection of a page in another root folder, the page at the same file path relative to the root folder:
+
+```ts
+import { findProjection } from 'fumadocs-core/page-tree';
+
+findProjection(v1, v2, page)?.url;
+```
+
+## fumadocs-ui@16.15.4
+
+### Fix Next.js `<Link>` not scrolling to top under docs layouts
+
+The page container rendered `<main style="display: contents">`, which Next.js' scroll handler treats as a hidden element: `display: contents` generates no box, so its `getBoundingClientRect()` is all-zero, indistinguishable from `display: none`. The handler skips it (and the sticky TOC siblings) without ever descending into children, dropping the scroll-to-top on navigation entirely.
+
+The `<main>` element in Docs, Notebook and Flux page containers is now a real grid item (`display: grid; grid-area: main`) wrapping the unchanged `#nd-page` article, which centers via the grid instead of `mx-auto`. Rendering is identical, but if your custom CSS has element rules on `main` that were previously inert, they now apply.
+
+## fumadocs-ui@16.15.2
+
+### Improve Vitepress theme
+
+More contrast & aligned to Vitepress.
+
 ## fumadocs-ui@16.14.5
 
 ### Add a `main` landmark to docs, notebook and flux pages

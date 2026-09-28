@@ -1,13 +1,17 @@
-import { loader } from 'fumadocs-core/source';
-import { defineDocs } from 'fumadocs-mdx/macro';
+import { dynamicLoader } from 'fumadocs-core/source';
+import { createPython } from 'fumadocs-python';
 
-const docs = defineDocs({
-  dir: 'content/docs',
+const python = createPython({
+  file: './httpx.json',
+  // serve pages at the root of `/docs`, instead of grouped under `/docs/httpx`
+  groupBy: 'none',
 });
 
-// See https://fumadocs.dev/docs/headless/source-api for more info
-export const source = loader({
-  // it assigns a URL to your pages
+const pythonLoader = dynamicLoader(python.dynamicSource(), {
   baseUrl: '/docs',
-  source: docs.toFumadocsSource(),
+  plugins: [python.loaderPlugin()],
 });
+
+export function getSource() {
+  return pythonLoader.get();
+}

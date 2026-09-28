@@ -92,16 +92,21 @@ function CopyButton({ id }: { id: string }) {
   return (
     <button
       type="button"
-      aria-label={t('Copy Link', { note: 'aria-label' })}
+      aria-live="polite"
       className={cn(
         buttonVariants({
-          color: 'ghost',
+          variant: 'ghost',
           className: 'text-fd-muted-foreground me-2',
         }),
       )}
       onClick={onClick}
     >
       {checked ? <Check className="size-3.5" /> : <LinkIcon className="size-3.5" />}
+      <span className="sr-only">
+        {checked
+          ? t('Copied Link', { note: 'aria-label' })
+          : t('Copy Link', { note: 'aria-label' })}
+      </span>
     </button>
   );
 }

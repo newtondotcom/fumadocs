@@ -1,6 +1,6 @@
 {
   "name": "fumadocs-twoslash",
-  "version": "3.3.0",
+  "version": "4.0.1",
   "description": "Typescript Twoslash Integration for Fumadocs",
   "keywords": [
     "Docs",
@@ -15,6 +15,9 @@
     "styles"
   ],
   "type": "module",
+  "sideEffects": [
+    "./styles/**/*.css"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -43,33 +46,30 @@
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
-    "@base-ui/react": "^1.7.0",
-    "@shikijs/twoslash": "^4.4.3",
-    "cnfast": "^0.1.0",
+    "@base-ui/react": "^1.8.0",
+    "@types/hast": "^3.0.5",
+    "cn": "^0.3.0",
     "mdast-util-from-markdown": "^2.0.3",
-    "mdast-util-gfm": "^3.1.0",
     "mdast-util-to-hast": "^13.2.1",
-    "twoslash": "^0.3.9"
+    "typescript": "~7.0.2"
   },
   "devDependencies": {
-    "@types/hast": "^3.0.5",
     "@types/mdast": "^4.0.4",
-    "@types/node": "26.2.0",
-    "@types/react": "^19.2.18",
+    "@types/node": "26.6.1",
+    "@types/react": "^19.3.0",
     "fumadocs-core": "workspace:*",
     "fumadocs-ui": "workspace:@fumadocs/base-ui@*",
     "shiki": "4.4.3",
     "tsconfig": "workspace:*",
-    "tsdown": "0.22.14",
-    "typescript": "^6.0.3"
+    "tsdown": "0.23.0"
   },
   "peerDependencies": {
     "@types/react": "*",
-    "fumadocs-core": "^16.7.16",
+    "fumadocs-core": "^16.15.7",
     "fumadocs-ui": "^16.7.16",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "shiki": "4.x.x"
+    "shiki": "^4.4.3"
   },
   "peerDependenciesMeta": {
     "@types/react": {

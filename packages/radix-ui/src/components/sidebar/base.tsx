@@ -14,6 +14,7 @@ import {
 } from 'react';
 import Link, { type LinkProps } from 'fumadocs-core/link';
 import { useOnChange } from 'fumadocs-core/utils/use-on-change';
+import { flushSync } from 'react-dom';
 import { cn } from '@/utils/cn';
 import {
   Collapsible,
@@ -26,7 +27,7 @@ import { useMediaQuery } from 'fumadocs-core/utils/use-media-query';
 import { Presence } from '@radix-ui/react-presence';
 import scrollIntoView from 'scroll-into-view-if-needed';
 import { usePathname } from 'fumadocs-core/framework';
-import { ScrollArea, ScrollViewport } from '../ui/scroll-area';
+import * as ScrollArea from '@radix-ui/react-scroll-area';
 import { useTranslations } from '@fuma-translate/react';
 
 interface SidebarContext {
@@ -187,22 +188,30 @@ export function SidebarViewport({
   viewport,
   children,
 }: {
-  area?: ComponentProps<typeof ScrollArea>;
-  viewport?: ComponentProps<typeof ScrollViewport>;
+  area?: ComponentProps<typeof ScrollArea.Root>;
+  viewport?: ComponentProps<typeof ScrollArea.Viewport>;
   children: ReactNode;
 }) {
   return (
-    <ScrollArea {...area} className={cn('min-h-0 flex-1', area?.className)}>
-      <ScrollViewport
+    <ScrollArea.Root
+      type="scroll"
+      {...area}
+      className={cn('overflow-hidden min-h-0 flex-1', area?.className)}
+    >
+      <ScrollArea.Viewport
         {...viewport}
         className={cn(
-          '*:flex! *:flex-col! *:gap-0.5! p-4 overscroll-contain mask-[linear-gradient(to_bottom,transparent,white_12px,white_calc(100%-12px),transparent)]',
+          'size-full rounded-[inherit] *:flex! *:flex-col! *:gap-0.5! p-4 overscroll-contain mask-[linear-gradient(to_bottom,transparent,white_12px,white_calc(100%-12px),transparent)]',
           viewport?.className,
         )}
       >
         {children}
-      </ScrollViewport>
-    </ScrollArea>
+      </ScrollArea.Viewport>
+      <ScrollArea.Corner />
+      <ScrollArea.Scrollbar className="flex h-full w-1.5 select-none data-[state=hidden]:animate-fd-fade-out">
+        <ScrollArea.ScrollAreaThumb className="relative flex-1 rounded-full bg-fd-border" />
+      </ScrollArea.Scrollbar>
+    </ScrollArea.Root>
   );
 }
 
@@ -389,9 +398,17 @@ export function SidebarCollapseTrigger(props: ComponentProps<'button'>) {
     <button
       type="button"
       aria-label={t('Collapse Sidebar', { note: 'aria-label' })}
+      aria-controls="nd-sidebar"
+      aria-expanded={!collapsed}
       data-collapsed={collapsed}
-      onClick={() => {
-        setCollapsed((prev) => !prev);
+      onClick={(e) => {
+        const button = e.currentTarget;
+        flushSync(() => setCollapsed((prev) => !prev));
+        // hand focus to the visible trigger if this one became hidden
+        if (button.matches('[inert] *'))
+          document
+            .querySelector<HTMLElement>('[aria-controls="nd-sidebar"]:not([inert] *)')
+            ?.focus();
       }}
       {...props}
     >

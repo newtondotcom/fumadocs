@@ -1,3 +1,90 @@
+## fumadocs-mdx@15.4.5
+
+### Stop recrawling `node_modules` on every Vite config resolution
+
+The config hook of `fumadocs-mdx/vite` walked the dependency tree below Fumadocs packages once per chain reaching a package, so a docs app with a few Fumadocs packages read ~10k `package.json` files (~0.9s) each time Vite resolved its config, which it does once per build environment.
+
+The crawl now visits each package once, breadth-first, and still records the shortest chain to every CommonJS dependency (`fumadocs-ui > @base-ui/react > use-sync-external-store/shim` and friends). The result is memoized for the process until the package manager's install state changes, so a build with several environments crawls once.
+
+## fumadocs-mdx@15.4.4
+
+### Sort glob results for deterministic codegen
+
+`fumadocs-mdx`'s Node codegen now sorts glob-matched files before generating collections, so the output (and anything derived from `getPages()`) is stable across builds of unchanged content. The Vite codegen path was checked separately: Vite's own `import.meta.glob` already sorts matched files internally, so it did not need the same fix.
+
+## fumadocs-mdx@15.4.3
+
+### Fix `experimentalBuildCache` bloating frontmatter-only imports
+
+With a warm build cache, `?only=frontmatter` imports were served the fully compiled page from cache instead of the frontmatter module, so every page was bundled two more times. The cache now only applies to full compilations.
+
+## fumadocs-mdx@15.4.2
+
+### Fix the `_mdast` export with `removePosition`
+
+```ts
+// fumadocs-mdx collection config
+postprocess: {
+  includeMDAST: { removePosition: true },
+},
+```
+
+This exported `_mdast` with no value, and `getMDAST()` then reported that `includeMDAST` was disabled. `removePosition` strips positions in place and returns nothing, so `JSON.stringify` received `undefined`.
+
+The tree is now cloned, stripped, and serialized from the clone.
+
+### Fix `SOURCEMAP_BROKEN` warnings on Vite
+
+With `build.sourcemap` enabled, Vite warned once per content and meta file because the loaders returned no source map. They now return an empty map when nothing is generated.
+
+Source maps for MDX stay opt-in, pass `SourceMapGenerator` from `source-map` to MDX options:
+
+```ts
+import { SourceMapGenerator } from 'source-map';
+
+export default defineConfig({
+  mdxOptions: {
+    SourceMapGenerator,
+  },
+});
+```
+
+## fumadocs-mdx@15.4.1
+
+### Mark packages side-effect free
+
+All packages now declare `sideEffects` in `package.json`, so bundlers can tree-shake unused modules. Packages shipping stylesheets list them as side effects to keep CSS imports.
+
+## fumadocs-mdx@15.4.0
+
+### Remark LLMs: export a component with `output: "function"`
+
+With `output: "function"`, `_markdown` becomes a component instead of a string: Markdown content is still stringified at compile time, while JSX elements stay as JSX, receiving their original props.
+
+```ts
+// fumadocs-mdx collection config
+postprocess: {
+  includeProcessedMarkdown: { output: 'function' },
+},
+```
+
+Render it with `renderToMarkdown` from `fumadocs-core/server`. Elements resolve from `props.components`: a component can call `asMarkdown()` to output its own Markdown form, other components (including missing ones) are serialized as JSX syntax.
+
+```tsx
+import { renderToMarkdown } from 'fumadocs-core/server';
+
+const { _markdown: Content } = await page.data.load();
+const text = await renderToMarkdown(<Content components={getMDXComponents()} />);
+```
+
+`getText('processed')` keeps working: it renders the component for you, with an optional components map:
+
+```ts
+const text = await page.data.getText('processed', { components: getMDXComponents() });
+```
+
+Supported in bundler collections with both compilers, and in `dynamic: true` collections & `@fumadocs/satteri/local-md` with the Sätteri compiler.
+
 ## fumadocs-mdx@15.3.1
 
 ### Scope `lastModified` git log to the content directory

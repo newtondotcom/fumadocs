@@ -1,3 +1,80 @@
+## create-fumadocs-app@16.2.7
+
+### Move `proxy.ts` into `src` when the `/src` directory is enabled
+
+The Next.js template ships a `proxy.ts` that rewrites `<page>.md` and `Accept: text/markdown` requests to the Markdown route.
+With the `/src` option, the CLI moved `app`, `lib` and `components` into `src` but left `proxy.ts` at the project root, where Next.js silently ignores it.
+
+The CLI now moves `proxy.ts` (and the other root convention files Next.js reads next to `app`) into `src`, so the Markdown rewrite runs in generated projects.
+
+## create-fumadocs-app@16.2.5
+
+### New registry format
+
+The CLI is upgraded to Fuma CLI 0.3, the registry is now a manifest with the raw files instead of one JSON per component.
+
+- Installing fetches every needed file in parallel, and no longer parses the installed files to link their imports.
+- Layouts are imported from `fumadocs-ui` unless you have installed them, without a Fumadocs-specific plugin.
+
+Older versions of the CLI cannot read the new registry, upgrade to install components.
+
+### Moved files
+
+Some components are installed to a location that follows their source, update your imports if you install them again:
+
+| Before                                                                          | Now                                             |
+| ------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `components/sanity/<name>.tsx`                                                  | `components/sanity/<name>.component.tsx`        |
+| `components/docs-sidebar/tabs-dropdown.tsx`                                     | `components/docs-sidebar/tabs/dropdown.tsx`     |
+| `components/openapi/playground/{result-display,server-select,oauth-dialog}.tsx` | `components/openapi/playground/components/*`    |
+| `components/graphql/playground/code-editor.tsx`                                 | `components/graphql/components/code-editor.tsx` |
+
+### Names of layout slots
+
+Slots are named after their path, like `layouts/docs/slots/sidebar` instead of `slots/docs/sidebar`. `fumadocs customise` is unchanged.
+
+## create-fumadocs-app@16.2.2
+
+### Mark packages side-effect free
+
+All packages now declare `sideEffects` in `package.json`, so bundlers can tree-shake unused modules. Packages shipping stylesheets list them as side effects to keep CSS imports.
+
+## create-fumadocs-app@16.2.0
+
+### Search providers and shared CLI features
+
+`--search` accepts `algolia`, `typesense` and `mixedbread` in addition to `orama` and `orama-cloud`.
+
+Search, linter, OG image and Ask AI options are now applied by the features of `@fumadocs/cli`, the same code that configures them on an existing app, instead of template plugins. `create-fumadocs-versions` pins the versions of the new search dependencies.
+
+### CLIs on `cac`
+
+The CLIs are now built on [cac](https://github.com/cacjs/cac).
+
+## create-fumadocs-app@16.1.26
+
+### Add `--yes` flag for non-interactive usage
+
+`create-fumadocs-app -y` (`--yes`) skips every prompt and uses the default for options you didn't pass, so scripts and AI coding agents can scaffold a project without a TTY:
+
+```bash
+npx create-fumadocs-app@latest my-docs --template +next+fuma-docs-mdx --install --yes
+```
+
+Previously this required setting `CI=1`. In `--yes` mode, a non-empty target directory fails instead of prompting for deletion.
+
+## create-fumadocs-app@16.1.25
+
+### Replace ts-morph with oxc-parser
+
+Template transforms (routes, prerender config, `RootProvider` search dialog, AI chat layout) now parse files with `oxc-parser` and edit the source text in place, instead of `ts-morph` and the TypeScript 6 compiler it bundles. Edits preserve the original formatting, including trailing commas.
+
+## create-fumadocs-app@16.1.24
+
+### Replace `cnfast` with `cn`
+
+Internal refactor only.
+
 ## create-fumadocs-app@16.1.10
 
 ### Replace Orama with ZBSearch, zero-config i18n search

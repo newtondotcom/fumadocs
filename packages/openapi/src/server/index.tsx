@@ -96,11 +96,6 @@ export interface OpenAPIPageData extends PageData {
   structuredData: StructuredData;
   toc: TOCItemType[];
   _openapi: InternalOpenAPIMeta;
-
-  /** @deprecated use `getOpenAPIPageProps()` instead */
-  getAPIPageProps: () => OpenAPIPageProps_Spec;
-  /** @deprecated use `getOpenAPIPageProps()` instead */
-  getClientAPIPageProps: () => OpenAPIPageProps_Spec;
 }
 
 export type OpenAPISourceOptions = SchemaToPagesOptions & {
@@ -158,7 +153,6 @@ export function createOpenAPI(options: OpenAPIOptions = {}): OpenAPIServer {
   ): Promise<OpenAPIVirtualFile[]> {
     const { baseDir = '', meta = false } = options;
     const files: OpenAPIVirtualFile[] = [];
-    const builderOptions = createAutoPreset(options);
 
     for (const [id, schema] of Object.entries(await server.getSchemas())) {
       const cachedDocFiles = docFilesCache?.get(schema);
@@ -167,7 +161,7 @@ export function createOpenAPI(options: OpenAPIOptions = {}): OpenAPIServer {
         continue;
       }
 
-      const entries = onEntries(fromSchema(id, schema.bundled, builderOptions));
+      const entries = onEntries(fromSchema(id, schema.bundled, createAutoPreset(options)));
       docFilesCache?.set(schema, entries);
       files.push(...entries);
 
@@ -179,12 +173,6 @@ export function createOpenAPI(options: OpenAPIOptions = {}): OpenAPIServer {
           path: `${baseDir}/${entry.path}`,
           data: {
             ...entry.info,
-            getAPIPageProps() {
-              return this.getOpenAPIPageProps();
-            },
-            getClientAPIPageProps() {
-              return this.getOpenAPIPageProps();
-            },
             getOpenAPIPageProps() {
               return {
                 payload: {

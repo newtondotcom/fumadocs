@@ -1,3 +1,277 @@
+## fumadocs-core@16.15.15
+
+### Fix infinite recursion in the MDX stringifier with `mdast-util-to-markdown@2.1.3`
+
+The stringifier wraps every `toMarkdown` handler but dropped their `attention` and `peek` properties, which `mdast-util-to-markdown@2.1.3` relies on to serialize bold and italic text. Pages containing them overflowed the stack during build.
+
+## fumadocs-core@16.15.13
+
+### Keep TOC step numbers after an HTML re-parse
+
+`remarkSteps` marks each step heading with a numeric `data-fd-step`, and the TOC plugin only read it as a number.
+A later `rehype-raw` pass re-parses the tree from HTML, so the property came back as the canonical `dataFdStep` string and every step number silently vanished from the table of contents.
+
+`rehypeToc` now accepts both shapes, so pipelines that render raw HTML in Markdown keep their numbered TOC.
+
+### Subscribe with `useSyncExternalStore`
+
+#### Optimize Performance
+
+Use `useSyncExternalStore()` from React.
+
+## fumadocs-core@16.15.12
+
+### Fix `filterElement` being ignored by `remarkLLMs`
+
+`remarkLLMs` wrote its own `filterElement` over yours, so the option did nothing:
+
+```ts
+remarkLLMs({
+  // never ran
+  filterElement: (node) => node.name !== 'Callout',
+});
+```
+
+Your function now runs for every node except `mdxjsEsm`, which stays excluded either way.
+
+Fumadocs MDX passes this option through `postprocess.includeProcessedMarkdown`.
+
+## fumadocs-core@16.15.10
+
+### Fix same-page anchors on Tanstack Start
+
+Tanstack Router's `Link` takes a pathname in `to` and reads the hash from a separate `hash` prop, so a same-page anchor like `[link](#installation)` was rendered as a link to the current page with the hash dropped, clicking it did nothing. The Tanstack adapter now renders a native `<a>` for those hrefs:
+
+```mdx
+Jump to [Installation](#installation).
+```
+
+## fumadocs-core@16.15.9
+
+### `getPageByUrl()` on the loader
+
+Look up a page by its URL:
+
+```ts
+source.getPageByUrl('/docs/getting-started');
+source.getPageByUrl('/cn/docs/getting-started', 'cn');
+```
+
+Without the `language` argument every language is looked up, unlike `getPageByHref()` which resolves the default language only.
+
+### `llms()` renders pages
+
+`llms()` used to build the `llms.txt` index only, turning a page into Markdown was left to your own `getLLMText()`. Pass `renderPage` and it covers both:
+
+```ts
+import { llms } from 'fumadocs-core/source';
+
+export const docsLlms = llms(source, {
+  renderPage: async (page) => `# ${page.data.title} (${page.url})
+
+${await page.data.getText('processed')}`,
+});
+```
+
+- `page(page)` renders one page, for the per-page Markdown route.
+- `full(lang?)` renders every page and joins them, for `llms-full.txt`.
+
+```ts
+// app/llms-full.txt/route.ts
+export const GET = async () => new Response(await docsLlms.full());
+```
+
+Both methods exist only when `renderPage` is given, in types and at runtime. Fumadocs cannot know how your content source exposes Markdown: `page.data.getText('processed')` on Fumadocs MDX, `page.data.content` on `@fumadocs/local-md`.
+
+### `fumadocs-core/mcp`: docs tools for your MCP server
+
+Register the docs tools on a server you own, rather than on a handler Fumadocs builds for you:
+
+```ts
+import { createMcpHandler, McpServer } from '@modelcontextprotocol/server';
+import { registerSearchTool, registerSourceTools } from 'fumadocs-core/mcp';
+import { createFromSource } from 'fumadocs-core/search/server';
+import { docsLlms, source } from '@/lib/source';
+
+const handler = createMcpHandler(() => {
+  const mcp = new McpServer({ name: 'docs', version: '1.0.0' });
+
+  registerSourceTools(mcp, source, docsLlms);
+  registerSearchTool(mcp, createFromSource(source));
+
+  return mcp;
+});
+
+export const GET = (req: Request) => handler.fetch(req);
+export const POST = (req: Request) => handler.fetch(req);
+export const DELETE = (req: Request) => handler.fetch(req);
+```
+
+| Function                                 | Tools                    |
+| ---------------------------------------- | ------------------------ |
+| `registerSourceTools(mcp, source, llms)` | `list_pages`, `get_page` |
+| `registerSearchTool(mcp, server)`        | `search`                 |
+
+Each takes the integration it reads from, so you can add your own tools next to them, point the search tool at another server, or register only one of the two.
+
+`@modelcontextprotocol/server` is an optional peer dependency, and `registerSourceTools` needs a `llms()` output with `renderPage`.
+
+### `toDocuments()` for Algolia and Orama Cloud
+
+Build the search indexes of every page, instead of mapping pages by hand:
+
+```ts
+// app/static.json/route.ts
+import { toDocuments } from 'fumadocs-core/search/algolia';
+import { source } from '@/lib/source';
+
+export const GET = async () => Response.json(await toDocuments(source));
+```
+
+It awaits `structuredData` when your collection is async (React Router and TanStack Start), a step that was easy to miss. Pass `tag` to filter results by a value of your choice:
+
+```ts
+toDocuments(source, { tag: (page) => page.slugs[0] });
+```
+
+Exported from `fumadocs-core/search/algolia` and `fumadocs-core/search/orama-cloud`.
+
+### Marked as side-effect free
+
+`fumadocs-core` now declares `"sideEffects": false`. No module in the package imports for side effects or ships CSS, so bundlers that rely on the hint (webpack in particular) can drop unused modules instead of keeping them alive:
+
+```ts
+import { createGetUrl } from 'fumadocs-core/source';
+```
+
+## fumadocs-core@16.15.7
+
+### Async `_fd_prepare` hook for Shiki transformers
+
+`rehype-code` awaits `transformer._fd_prepare(code, options)` on every transformer before highlighting a code block. Transformers can run async work (or coalesce work across the code blocks being highlighted concurrently) and serve it from the synchronous Shiki hooks afterwards.
+
+## fumadocs-core@16.15.5
+
+### Root types: version your docs with `root: "<type>"`
+
+`root` in `meta.json` now accepts a string, the type of root folder. Root folders of the same type under the same parent are interchangeable, which is how you keep multiple versions of the same docs in one site:
+
+```json tab="content/docs/v1/meta.json"
+{
+  "title": "1.0.0",
+  "root": "version"
+}
+```
+
+```json tab="content/docs/v2/meta.json"
+{
+  "title": "2.0.0",
+  "root": "version"
+}
+```
+
+The sidebar only shows the opened version, and docs layouts render a dropdown to switch between them. Switching keeps your place: it navigates to the same page in the other version (`/docs/v1/guide` to `/docs/v2/guide`), or its index page when the page doesn't exist there.
+
+`root: true` is simply the default type, displayed as tabs. See [Versioning](https://fumadocs.dev/docs/versioning) for the guide and [Root Type](https://fumadocs.dev/docs/page-conventions#root-type) for the reference.
+
+### Tabs are grouped by root folder
+
+Layout tabs are now grouped by the root folders on the current page's path, with one dropdown per group. This changes a few behaviours of the existing `root: true` tabs:
+
+- Clicking a tab navigates to the same page in the target folder when it exists, otherwise its index page as before.
+- With nested root folders, each level gets its own dropdown instead of one flat list. Tab lists (`tabMode: 'top'` on Docs layout, `tabMode: 'navbar'` on Notebook layout) show the innermost `root: true` group, and are hidden on pages outside of any root folder.
+- `getLayoutTabs()` includes typed root folders too, so a custom `transform` also decorates them. Custom `tabs` entries bound to a page tree folder are grouped the same way, other entries are appended to the `root: true` dropdown.
+- `tabs={false}` disables the dropdowns of typed root folders as well.
+
+### `findProjection()` in `fumadocs-core/page-tree`
+
+Find the structural projection of a page in another root folder, the page at the same file path relative to the root folder:
+
+```ts
+import { findProjection } from 'fumadocs-core/page-tree';
+
+findProjection(v1, v2, page)?.url;
+```
+
+## fumadocs-core@16.15.3
+
+### Fix duplicated search result for pages whose description repeats in the content
+
+Pages generated by Fumadocs OpenAPI emit the operation description as both the page description and a content section, so every endpoint page listed the same line twice in the search dialog. Search indexing now skips the page description when an identical content record exists, keeping the record with the heading anchor.
+
+Fix [#3509](https://github.com/fuma-nama/fumadocs/issues/3509)
+
+### Remark LLMs: export a component with `output: "function"`
+
+With `output: "function"`, `_markdown` becomes a component instead of a string: Markdown content is still stringified at compile time, while JSX elements stay as JSX, receiving their original props.
+
+```ts
+// fumadocs-mdx collection config
+postprocess: {
+  includeProcessedMarkdown: { output: 'function' },
+},
+```
+
+Render it with `renderToMarkdown` from `fumadocs-core/server`. Elements resolve from `props.components`: a component can call `asMarkdown()` to output its own Markdown form, other components (including missing ones) are serialized as JSX syntax.
+
+```tsx
+import { renderToMarkdown } from 'fumadocs-core/server';
+
+const { _markdown: Content } = await page.data.load();
+const text = await renderToMarkdown(<Content components={getMDXComponents()} />);
+```
+
+`getText('processed')` keeps working: it renders the component for you, with an optional components map:
+
+```ts
+const text = await page.data.getText('processed', { components: getMDXComponents() });
+```
+
+Supported in bundler collections with both compilers, and in `dynamic: true` collections & `@fumadocs/satteri/local-md` with the Sätteri compiler.
+
+### `fumadocs-core/server`: render React trees into Markdown
+
+The Markdown renderer of Fumapress is now part of Fumadocs core. `renderToMarkdown()` converts RSC output into Markdown, and calling `asMarkdown()` is how a server component opts in with its own Markdown form:
+
+```tsx
+import { asMarkdown, md, renderToMarkdown } from 'fumadocs-core/server';
+
+async function Callout({ title, children }) {
+  if (asMarkdown()) return md.linePrefix('> ')`**${title}**\n${children}`;
+
+  return <div className="callout">...</div>;
+}
+
+const text = await renderToMarkdown(
+  <Callout title="Note">
+    <p>Hello</p>
+  </Callout>,
+);
+// > **Note**
+// >
+// > Hello
+```
+
+Components that never call `asMarkdown()` are kept as JSX syntax with their serializable props, so are client components, which never run on the server. Host elements returned by an opted-in component are converted with a built-in HTML to Markdown table.
+
+`renderRoute()` renders a page element only when its component opts in, for giving arbitrary routes a Markdown version. In the browser the module resolves to a stub where `asMarkdown()` is always `false`.
+
+## fumadocs-core@16.15.1
+
+### Forward dynamic loader from `fumadocs-core/source`
+
+
+
+### Read structured data from `page.data.structuredData()`
+
+Search indexing no longer falls back to `(await page.data.load()).structuredData`. Runtime content sources expose `structuredData()` on page data instead, sharing the compile with `load()`:
+
+```ts
+const structuredData = await page.data.structuredData();
+```
+
+The renderer returned by `load()` still carries `structuredData`, existing code keeps working.
+
 ## fumadocs-core@16.15.0
 
 ### Redesign source API

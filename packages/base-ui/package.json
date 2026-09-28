@@ -1,6 +1,6 @@
 {
   "name": "@fumadocs/base-ui",
-  "version": "16.15.0",
+  "version": "16.15.15",
   "description": "The Base UI version of Fumadocs UI",
   "keywords": [
     "Docs",
@@ -15,6 +15,10 @@
     "dist"
   ],
   "type": "module",
+  "sideEffects": [
+    "./css/**/*.css",
+    "./dist/**/*.css"
+  ],
   "exports": {
     "./components/accordion": "./dist/components/accordion.js",
     "./components/banner": "./dist/components/banner.js",
@@ -41,6 +45,7 @@
     "./components/steps": "./dist/components/steps.js",
     "./components/tabs": "./dist/components/tabs.js",
     "./components/toc": "./dist/components/toc/index.js",
+    "./components/toc/block": "./dist/components/toc/block.js",
     "./components/toc/clerk": "./dist/components/toc/clerk.js",
     "./components/toc/default": "./dist/components/toc/default.js",
     "./components/type-table": "./dist/components/type-table.js",
@@ -48,7 +53,6 @@
     "./components/ui/button": "./dist/components/ui/button.js",
     "./components/ui/collapsible": "./dist/components/ui/collapsible.js",
     "./components/ui/popover": "./dist/components/ui/popover.js",
-    "./components/ui/scroll-area": "./dist/components/ui/scroll-area.js",
     "./components/ui/tabs": "./dist/components/ui/tabs.js",
     "./contexts/i18n": "./dist/contexts/i18n.js",
     "./contexts/search": "./dist/contexts/search.js",
@@ -130,13 +134,13 @@
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
-    "@base-ui/react": "^1.7.0",
+    "@base-ui/react": "^1.8.0",
     "@fuma-translate/react": "^1.0.2",
     "@fumadocs/tailwind": "workspace:*",
     "class-variance-authority": "^0.7.1",
-    "cnfast": "^0.1.0",
-    "lucide-react": "^1.31.0",
-    "motion": "^13.1.0",
+    "cn": "^0.3.0",
+    "lucide-react": "^1.47.0",
+    "motion": "^13.4.0",
     "next-themes": "^0.4.6",
     "react-remove-scroll": "^2.7.2",
     "rehype-raw": "^7.0.0",
@@ -148,18 +152,18 @@
     "@fumadocs/cli": "workspace:*",
     "@tailwindcss/cli": "^4.3.3",
     "@tailwindcss/oxide": "^4.3.3",
-    "@tsdown/css": "^0.22.14",
+    "@tsdown/css": "^0.23.0",
     "@types/hast": "^3.0.5",
     "@types/mdx": "^2.0.14",
-    "@types/node": "^26.2.0",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
-    "fuma-cli": "^0.1.1",
+    "@types/node": "^26.6.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "fuma-cli": "^0.3.1",
     "fumadocs-core": "workspace:*",
     "react-medium-image-zoom": "^5.4.9",
     "tailwindcss": "^4.3.3",
     "tsconfig": "workspace:*",
-    "tsdown": "0.22.14",
+    "tsdown": "0.23.0",
     "unified": "^11.0.5"
   },
   "peerDependencies": {

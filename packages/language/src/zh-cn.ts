@@ -3,13 +3,8 @@ import type { Translations as UITranslations } from 'fumadocs-ui/i18n';
 import type { Translations as OpenAPITranslations } from 'fumadocs-openapi/i18n';
 import type { Translations as AsyncAPITranslations } from '@fumadocs/asyncapi/i18n';
 import type { Translations as StoryTranslations } from '@fumadocs/story/i18n';
-import type { Translations as APIDocsTranslations } from '@fumadocs/api-docs/i18n';
 
-type Translations = UITranslations &
-  OpenAPITranslations &
-  AsyncAPITranslations &
-  StoryTranslations &
-  APIDocsTranslations;
+type Translations = UITranslations & OpenAPITranslations & AsyncAPITranslations & StoryTranslations;
 
 const translations = {
   displayName: '简体中文',
@@ -23,6 +18,9 @@ const translations = {
   'Close Sidebar(aria-label)': '关闭侧边栏',
   'Close Sidebar(sidebar)(aria-label)': '关闭侧边栏',
   'Collapse Sidebar(sidebar)(aria-label)': '收起侧边栏',
+  'Copied Anchor Link(heading anchor)(aria-label)': '已复制锚点链接',
+  'Copied Link(accordion)(aria-label)': '已复制链接',
+  'Copied Markdown(page actions)': '已复制 Markdown',
   'Copied Text(code block)(aria-label)': '已复制文字',
   'Copy Anchor Link(heading anchor)(aria-label)': '复制锚点链接',
   'Copy Link(accordion)(aria-label)': '复制链接',
@@ -66,7 +64,9 @@ const translations = {
   'Type(type table)': '类型',
   'View as Markdown(page actions)': '以 Markdown 查看',
 
-  // @fumadocs/api-docs
+  // shared API components
+  'Copied Link(schema UI)(aria-label)': '已复制链接',
+  'Copy Link(schema UI)(aria-label)': '复制链接',
   'Default(schema UI)': '默认',
   'Deprecated(schema UI)': '已弃用',
   'Enter Property Name(playground)': '输入属性名称',
@@ -109,6 +109,7 @@ const translations = {
     '二进制响应主体，{length} 字节',
   'Body(playground)': '主体',
   'Callbacks(operation page)': '回调',
+  'Client Authentication(OAuth dialog)': '客户端身份验证',
   'Client Credentials(OAuth dialog)': '客户端凭证',
   'Client Error(playground result display)': '客户端错误',
   'Client ID(OAuth dialog)': '客户端 ID',
@@ -134,8 +135,11 @@ const translations = {
   'Forbidden(playground status info)': '禁止访问',
   'Header Parameters(operation page)': '标头参数',
   'Header(playground)': '标头',
+  'Headers(playground result display)': '标头',
   'Implicit(OAuth dialog)': '隐式',
   'In(security scheme)': '位置',
+  'Include the client ID and secret in the token request body.(OAuth dialog)':
+    '在令牌请求体中包含客户端 ID 和密钥。',
   'Intended for the server-to-server authentication.(OAuth dialog)': '适用于服务器对服务器验证。',
   'Internal Server Error(playground status info)': '内部服务器错误',
   'Not Found(playground status info)': '找不到',
@@ -155,6 +159,10 @@ const translations = {
   'Retrieve the access token directly.(OAuth dialog)': '直接获取访问令牌。',
   'Scope(security scheme)': '范围',
   'Select a flow(OAuth dialog)': '选择流程',
+  'Send as Basic Auth header(OAuth dialog)': '以 Basic Auth 标头发送',
+  'Send client credentials in body(OAuth dialog)': '在请求体中发送客户端凭证',
+  'Send the client ID and secret in the Authorization header.(OAuth dialog)':
+    '在 Authorization 标头中发送客户端 ID 和密钥。',
   'Send(playground)': '发送',
   'Server URL(playground server select)': '服务器 URL',
   'Submit(OAuth dialog)': '提交',

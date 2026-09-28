@@ -17,8 +17,8 @@ import type { ElementContent } from 'hast';
 import { remarkSteps } from '@fumadocs/satteri/remark-steps';
 import { remarkBlockId } from '@fumadocs/satteri/remark-block-id';
 import { remarkTs2js } from '@fumadocs/satteri/remark-ts2js';
+import { remarkFeature } from '@/lib/remark-feature';
 import { remarkAutoTypeTable } from '@fumadocs/satteri/remark-auto-type-table';
-import { Nodes } from 'mdast';
 import { rehypeCodeDefaultOptions } from 'fumadocs-core/mdx-plugins/rehype-code';
 import { transformerTwoslash } from 'fumadocs-twoslash';
 import { createFileSystemTypesCache } from 'fumadocs-twoslash/cache-fs';
@@ -108,22 +108,17 @@ const docs = defineDocs({
         },
         remarkStructureOptions: {
           stringify: {
-            filterElement(node: Nodes) {
-              switch (node.type) {
-                case 'mdxJsxFlowElement':
-                case 'mdxJsxTextElement':
-                  switch (node.name) {
-                    case 'File':
-                    case 'TypeTable':
-                    case 'Callout':
-                    case 'Card':
-                    case 'Custom':
-                      return true;
-                  }
-                  return 'children-only';
+            filterElement(node) {
+              switch (node.name) {
+                case 'File':
+                case 'TypeTable':
+                case 'Callout':
+                case 'Card':
+                case 'Custom':
+                  return true;
+                default:
+                  return false;
               }
-
-              return true;
             },
           },
         },
@@ -141,6 +136,7 @@ const docs = defineDocs({
                 remarkBlockId({ addDataAttribute: 'feedback' }),
                 remarkAutoTypeTable(typeTableOptions),
                 remarkTs2js(),
+                remarkFeature(),
                 ...plugins,
               ],
       };

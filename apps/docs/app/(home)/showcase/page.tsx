@@ -84,6 +84,16 @@ const showcases: ShowcaseObject[] = [
     url: 'https://www.agentskit.io',
   },
   {
+    image: '/showcases/generative-a11y.png',
+    name: 'generative-a11y',
+    url: 'https://generativea11y.com',
+  },
+  {
+    image: '/showcases/openpost.png',
+    name: 'OpenPost',
+    url: 'https://docs.openpo.st',
+  },
+  {
     image: '/showcases/comfydeploy.png',
     name: 'ComfyDeploy',
     url: 'https://comfydeploy.com',
@@ -156,7 +166,7 @@ const showcases: ShowcaseObject[] = [
   {
     image: '/showcases/sora-ui.png',
     name: 'Sora UI',
-    url: 'https://ui.soralabs.io.vn',
+    url: 'https://ui.soralabs.studio',
   },
   {
     image: '/showcases/kibo-ui.jpg',
